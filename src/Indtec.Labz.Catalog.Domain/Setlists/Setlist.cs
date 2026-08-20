@@ -1,8 +1,10 @@
+using Indtec.Labz.Catalog.Domain.BuildingBlocks;
 using Indtec.Labz.Catalog.Domain.Music;
+using Indtec.Labz.Catalog.Domain.Results;
 
 namespace Indtec.Labz.Catalog.Domain.Setlists;
 
-public sealed class Setlist
+public sealed class Setlist : IAggregateRoot<Guid>
 {
     private readonly List<SetlistSong> _songs = [];
 
@@ -19,39 +21,47 @@ public sealed class Setlist
     public IReadOnlyCollection<SetlistSong> Songs => _songs.AsReadOnly();
     public TimeSpan TotalDuration => TimeSpan.FromTicks(_songs.Sum(x => x.Duration.Ticks));
 
-    public static Setlist Create(string name)
+    public static Result<Setlist> Create(string name)
     {
-        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Setlist name is required.");
-        return new Setlist(Guid.NewGuid(), name.Trim());
+        if (string.IsNullOrWhiteSpace(name)) return Result<Setlist>.Failure(SetlistErrors.NameRequired);
+        return Result<Setlist>.Success(new Setlist(Guid.NewGuid(), name.Trim()));
     }
 
-    public void AddSong(Guid musicId, TimeSpan duration, MusicalKey performanceKey)
+    public Result AddSong(Guid musicId, TimeSpan duration, MusicalKey performanceKey)
     {
-        EnsureDraft();
-        if (_songs.Any(x => x.MusicId == musicId)) throw new DomainException("A music can appear only once in a setlist.");
-        if (duration <= TimeSpan.Zero) throw new DomainException("Music duration must be greater than zero.");
+        var editable = EnsureDraft();
+        if (editable.IsFailure) return editable;
+        if (_songs.Any(x => x.MusicId == musicId)) return Result.Failure(SetlistErrors.DuplicateMusic);
+        if (duration <= TimeSpan.Zero) return Result.Failure(SetlistErrors.InvalidDuration);
 
         _songs.Add(new SetlistSong(musicId, _songs.Count + 1, duration, performanceKey));
+        return Result.Success();
     }
 
-    public void RemoveSong(Guid musicId)
+    public Result RemoveSong(Guid musicId)
     {
-        EnsureDraft();
-        var song = _songs.SingleOrDefault(x => x.MusicId == musicId) ?? throw new DomainException("Music is not part of this setlist.");
+        var editable = EnsureDraft();
+        if (editable.IsFailure) return editable;
+
+        var song = _songs.SingleOrDefault(x => x.MusicId == musicId);
+        if (song is null) return Result.Failure(SetlistErrors.MusicNotFound);
+
         _songs.Remove(song);
         for (var index = 0; index < _songs.Count; index++) _songs[index].MoveTo(index + 1);
+        return Result.Success();
     }
 
-    public SetlistPublished Publish(DateTimeOffset occurredAt)
+    public Result<SetlistPublished> Publish(DateTimeOffset occurredAt)
     {
-        EnsureDraft();
-        if (_songs.Count == 0) throw new DomainException("A setlist must contain at least one music before publication.");
+        var editable = EnsureDraft();
+        if (editable.IsFailure) return Result<SetlistPublished>.Failure(editable.Error!);
+        if (_songs.Count == 0) return Result<SetlistPublished>.Failure(SetlistErrors.EmptySetlist);
+
         Status = SetlistStatus.Published;
-        return new SetlistPublished(Id, occurredAt);
+        return Result<SetlistPublished>.Success(new SetlistPublished(Id, occurredAt));
     }
 
-    private void EnsureDraft()
-    {
-        if (Status != SetlistStatus.Draft) throw new DomainException("Published setlists cannot be changed.");
-    }
+    private Result EnsureDraft() => Status == SetlistStatus.Draft
+        ? Result.Success()
+        : Result.Failure(SetlistErrors.PublishedIsImmutable);
 }
