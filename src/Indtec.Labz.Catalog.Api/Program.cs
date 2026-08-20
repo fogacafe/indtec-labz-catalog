@@ -7,7 +7,6 @@ using Indtec.Labz.Catalog.Infrastructure.Persistence;
 using Indtec.Labz.Catalog.Infrastructure.Secrets;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddOpenApi();
 builder.Services.AddSingleton(TimeProvider.System);
 
 var database = builder.Configuration.GetSection(DatabaseOptions.SectionName).Get<DatabaseOptions>()
@@ -33,7 +32,6 @@ builder.Services.AddScoped<ISetlistRepository, SetlistRepository>();
 builder.Services.AddScoped<PublishSetlist>();
 
 var app = builder.Build();
-if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
 app.MapPost("/songs", async (CreateMusicRequest request, IMusicRepository repository, CancellationToken ct) =>
 {
