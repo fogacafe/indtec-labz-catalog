@@ -9,7 +9,7 @@ public sealed class SetlistRepository(DbConnectionFactory connectionFactory) : I
     public async Task AddAsync(Setlist setlist, CancellationToken cancellationToken)
     {
         const string sql = "insert into setlist (id, name, status) values (@Id, @Name, @Status)";
-        await using var connection = connectionFactory.Create();
+        await using var connection = await connectionFactory.CreateAsync(cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(sql, new { setlist.Id, setlist.Name, Status = setlist.Status.ToString() }, cancellationToken: cancellationToken));
     }
 
@@ -21,7 +21,7 @@ public sealed class SetlistRepository(DbConnectionFactory connectionFactory) : I
             from setlist_song ss join music m on m.id = ss.music_id
             where ss.setlist_id = @id order by ss.position
             """;
-        await using var connection = connectionFactory.Create();
+        await using var connection = await connectionFactory.CreateAsync(cancellationToken);
         var header = await connection.QuerySingleOrDefaultAsync<SetlistRow>(new CommandDefinition(headerSql, new { id }, cancellationToken: cancellationToken));
         if (header is null) return null;
         var rows = await connection.QueryAsync<SetlistSongRow>(new CommandDefinition(songsSql, new { id }, cancellationToken: cancellationToken));
@@ -31,7 +31,7 @@ public sealed class SetlistRepository(DbConnectionFactory connectionFactory) : I
 
     public async Task SaveAsync(Setlist setlist, CancellationToken cancellationToken)
     {
-        await using var connection = connectionFactory.Create();
+        await using var connection = await connectionFactory.CreateAsync(cancellationToken);
         await connection.OpenAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await connection.ExecuteAsync(new CommandDefinition("update setlist set name=@Name, status=@Status where id=@Id", new { setlist.Id, setlist.Name, Status=setlist.Status.ToString() }, transaction, cancellationToken: cancellationToken));
