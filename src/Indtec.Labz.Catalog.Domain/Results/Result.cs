@@ -9,7 +9,7 @@ public class Result
     public IReadOnlyCollection<Error> Errors { get; }
 
     public static Result Success() => new(Array.Empty<Error>());
-    public static Result Failure(params Error[] errors) => Failure((IEnumerable<Error>)errors);
+    public static Result Failure(params Error[] errors) => new(errors);
     public static Result Failure(IEnumerable<Error> errors) => new(errors.ToArray());
 }
 
@@ -20,6 +20,6 @@ public sealed class Result<T> : Result
     public T? Value { get; }
 
     public static Result<T> Success(T value) => new(value, Array.Empty<Error>());
-    public new static Result<T> Failure(params Error[] errors) => Failure((IEnumerable<Error>)errors);
-    public static Result<T> Failure(IEnumerable<Error> errors) => new(default, errors.ToArray());
+    public new static Result<T> Failure(params Error[] errors) => new(default, errors);
+    public new static Result<T> Failure(IEnumerable<Error> errors) => new(default, errors.ToArray());
 }
