@@ -8,7 +8,8 @@ namespace Indtec.Labz.Catalog.IntegrationTests;
 
 public sealed class PostgresFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
+        .WithImage("postgres:17-alpine")
         .WithDatabase("indtec_catalog")
         .WithUsername("indtec")
         .WithPassword("integration-test-only")
