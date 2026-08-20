@@ -5,6 +5,5 @@
   <ItemGroup>
     <ProjectReference Include="../Indtec.Labz.Catalog.Application/Indtec.Labz.Catalog.Application.csproj" />
     <ProjectReference Include="../Indtec.Labz.Catalog.Infrastructure/Indtec.Labz.Catalog.Infrastructure.csproj" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
   </ItemGroup>
 </Project>
