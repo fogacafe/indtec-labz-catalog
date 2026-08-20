@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="../Indtec.Labz.Catalog.Application/Indtec.Labz.Catalog.Application.csproj" />
+    <ProjectReference Include="../Indtec.Labz.Catalog.Infrastructure/Indtec.Labz.Catalog.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>
