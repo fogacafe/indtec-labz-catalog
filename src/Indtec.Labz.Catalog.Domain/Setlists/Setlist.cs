@@ -54,7 +54,7 @@ public sealed class Setlist : IAggregateRoot<Guid>
     public Result<SetlistPublished> Publish(DateTimeOffset occurredAt)
     {
         var editable = EnsureDraft();
-        if (editable.IsFailure) return Result<SetlistPublished>.Failure(editable.Error!);
+        if (editable.IsFailure) return Result<SetlistPublished>.Failure(editable.Errors);
         if (_songs.Count == 0) return Result<SetlistPublished>.Failure(SetlistErrors.EmptySetlist);
 
         Status = SetlistStatus.Published;
