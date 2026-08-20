@@ -11,13 +11,18 @@ if (app.Environment.IsDevelopment()) app.MapOpenApi();
 // Persistence-backed handlers are introduced incrementally as the application use cases evolve.
 app.MapPost("/songs", (CreateMusicRequest request) =>
 {
-    var music = Music.Create(request.Name, request.Artist, TimeSpan.FromSeconds(request.DurationSeconds), request.Bpm, request.OriginalKey);
-    return Results.Created($"/songs/{music.Id}", music);
+    var result = Music.Create(request.Name, request.Artist, TimeSpan.FromSeconds(request.DurationSeconds), request.Bpm, request.OriginalKey);
+    return result.IsSuccess
+        ? Results.Created($"/songs/{result.Value!.Id}", result.Value)
+        : Results.BadRequest(result.Error);
 });
 
 app.MapPost("/setlists", (CreateSetlistRequest request) =>
 {
-    var setlist = Setlist.Create(request.Name);
+    var result = Setlist.Create(request.Name);
+    if (result.IsFailure) return Results.BadRequest(result.Error);
+
+    var setlist = result.Value!;
     return Results.Created($"/setlists/{setlist.Id}", new { setlist.Id, setlist.Name, setlist.Status });
 });
 
