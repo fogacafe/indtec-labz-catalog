@@ -1,16 +1,37 @@
+using Amazon.SecretsManager;
 using Indtec.Labz.Catalog.Api;
 using Indtec.Labz.Catalog.Application.Setlists;
 using Indtec.Labz.Catalog.Domain.Music;
 using Indtec.Labz.Catalog.Domain.Setlists;
 using Indtec.Labz.Catalog.Infrastructure.Persistence;
+using Indtec.Labz.Catalog.Infrastructure.Secrets;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton(new DbConnectionFactory(builder.Configuration.GetConnectionString("Catalog") ?? "Host=localhost;Port=5432;Database=indtec_catalog;Username=indtec;Password=indtec"));
+
+var database = builder.Configuration.GetSection(DatabaseOptions.SectionName).Get<DatabaseOptions>()
+    ?? throw new InvalidOperationException("Database configuration is missing.");
+builder.Services.AddSingleton(database);
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<IDatabaseCredentialsProvider, ConfigurationDatabaseCredentialsProvider>();
+}
+else
+{
+    builder.Services.AddSingleton<IAmazonSecretsManager, AmazonSecretsManagerClient>();
+    builder.Services.AddSingleton<IDatabaseCredentialsProvider>(sp =>
+        new AwsSecretsManagerDatabaseCredentialsProvider(
+            sp.GetRequiredService<IAmazonSecretsManager>(),
+            database.SecretId ?? throw new InvalidOperationException("Database:SecretId is required outside Development.")));
+}
+
+builder.Services.AddSingleton<DbConnectionFactory>();
 builder.Services.AddScoped<IMusicRepository, MusicRepository>();
 builder.Services.AddScoped<ISetlistRepository, SetlistRepository>();
 builder.Services.AddScoped<PublishSetlist>();
+
 var app = builder.Build();
 if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
