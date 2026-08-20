@@ -2,26 +2,24 @@ namespace Indtec.Labz.Catalog.Domain.Results;
 
 public class Result
 {
-    protected Result(bool isSuccess, Error? error)
-    {
-        IsSuccess = isSuccess;
-        Error = error;
-    }
+    protected Result(IReadOnlyCollection<Error> errors) => Errors = errors;
 
-    public bool IsSuccess { get; }
+    public bool IsSuccess => Errors.Count == 0;
     public bool IsFailure => !IsSuccess;
-    public Error? Error { get; }
+    public IReadOnlyCollection<Error> Errors { get; }
 
-    public static Result Success() => new(true, null);
-    public static Result Failure(Error error) => new(false, error);
+    public static Result Success() => new(Array.Empty<Error>());
+    public static Result Failure(params Error[] errors) => Failure((IEnumerable<Error>)errors);
+    public static Result Failure(IEnumerable<Error> errors) => new(errors.ToArray());
 }
 
 public sealed class Result<T> : Result
 {
-    private Result(bool isSuccess, T? value, Error? error) : base(isSuccess, error) => Value = value;
+    private Result(T? value, IReadOnlyCollection<Error> errors) : base(errors) => Value = value;
 
     public T? Value { get; }
 
-    public static Result<T> Success(T value) => new(true, value, null);
-    public new static Result<T> Failure(Error error) => new(false, default, error);
+    public static Result<T> Success(T value) => new(value, Array.Empty<Error>());
+    public new static Result<T> Failure(params Error[] errors) => Failure((IEnumerable<Error>)errors);
+    public static Result<T> Failure(IEnumerable<Error> errors) => new(default, errors.ToArray());
 }
