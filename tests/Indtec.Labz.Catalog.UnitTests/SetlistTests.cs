@@ -9,11 +9,9 @@ public sealed class SetlistTests
     public void Publish_requires_at_least_one_music()
     {
         var setlist = Setlist.Create("Friday night").Value!;
-
         var result = setlist.Publish(DateTimeOffset.UtcNow);
-
         Assert.True(result.IsFailure);
-        Assert.Equal(SetlistErrors.EmptySetlist, result.Error);
+        Assert.Contains(SetlistErrors.EmptySetlist, result.Errors);
     }
 
     [Fact]
@@ -22,11 +20,9 @@ public sealed class SetlistTests
         var setlist = Setlist.Create("Friday night").Value!;
         var musicId = Guid.NewGuid();
         Assert.True(setlist.AddSong(musicId, TimeSpan.FromMinutes(4), MusicalKey.E).IsSuccess);
-
         var result = setlist.AddSong(musicId, TimeSpan.FromMinutes(4), MusicalKey.D);
-
         Assert.True(result.IsFailure);
-        Assert.Equal(SetlistErrors.DuplicateMusic, result.Error);
+        Assert.Contains(SetlistErrors.DuplicateMusic, result.Errors);
     }
 
     [Fact]
@@ -35,10 +31,8 @@ public sealed class SetlistTests
         var setlist = Setlist.Create("Friday night").Value!;
         Assert.True(setlist.AddSong(Guid.NewGuid(), TimeSpan.FromMinutes(4), MusicalKey.E).IsSuccess);
         Assert.True(setlist.Publish(DateTimeOffset.UtcNow).IsSuccess);
-
         var result = setlist.AddSong(Guid.NewGuid(), TimeSpan.FromMinutes(3), MusicalKey.A);
-
         Assert.True(result.IsFailure);
-        Assert.Equal(SetlistErrors.PublishedIsImmutable, result.Error);
+        Assert.Contains(SetlistErrors.PublishedIsImmutable, result.Errors);
     }
 }
