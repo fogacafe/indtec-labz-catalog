@@ -17,9 +17,15 @@ public sealed class SetlistRepository(DbConnectionFactory connectionFactory) : I
     {
         const string headerSql = "select id, name, status from setlist where id = @id";
         const string songsSql = """
-            select ss.music_id, ss.position, m.duration_seconds, ss.performance_key
-            from setlist_song ss join music m on m.id = ss.music_id
-            where ss.setlist_id = @id order by ss.position
+            select
+                ss.music_id as MusicId,
+                ss.position as Position,
+                m.duration_seconds as DurationSeconds,
+                ss.performance_key as PerformanceKey
+            from setlist_song ss
+            join music m on m.id = ss.music_id
+            where ss.setlist_id = @id
+            order by ss.position
             """;
         await using var connection = await connectionFactory.CreateAsync(cancellationToken);
         var header = await connection.QuerySingleOrDefaultAsync<SetlistRow>(new CommandDefinition(headerSql, new { id }, cancellationToken: cancellationToken));
